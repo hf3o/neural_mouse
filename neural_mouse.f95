@@ -72,14 +72,12 @@ program mouse_nn
                     mse = mse + (err_x**2 + err_y**2)
 
                     ! Backpropagation
-                    ! Gradienty dla W2 i b2
                     do j = 1, 2
                         db2(j) = -2.0_8 * (Y_train(i,j) - predicted(j))
                         do k = 1, 4
                             dW2(j,k) = db2(j) * hidden(k)
                         end do
                     end do
-                    ! Gradienty dla W1 i b1
                     do j = 1, 4
                         db1(j) = 0.0_8
                         do k = 1, 2
@@ -112,6 +110,26 @@ program mouse_nn
                 mse = mse / real(train_size, 8)
                 print *, "Epoch: ", epoch, " MSE: ", mse
             end do
+
+            ! Wyświetlanie wyników predykcji po treningu (dla pierwszych 5 próbek)
+            print *, "Przykładowe wyniki po treningu (pierwsze 5 próbek):"
+            do i = 1, min(5, train_size)
+                x = X_train(i, 1)
+                y = X_train(i, 2)
+                do j = 1, 4
+                    hidden(j) = W1(j,1) * x + W1(j,2) * y + b1(j)
+                    hidden(j) = relu(hidden(j))
+                end do
+                do j = 1, 2
+                    predicted(j) = 0.0_8
+                    do k = 1, 4
+                        predicted(j) = predicted(j) + W2(j,k) * hidden(k)
+                    end do
+                    predicted(j) = predicted(j) + b2(j)
+                end do
+                print *, "Rzeczywiste: (", X_train(i,1), ",", X_train(i,2), &
+                         ") Przewidziane: (", predicted(1), ",", predicted(2), ")"
+            end do
         end subroutine train_network
 
     ! Główna część programu
@@ -128,7 +146,8 @@ program mouse_nn
     allocate(X_train(train_size, 2))
     allocate(Y_train(train_size, 2))
 
-    ! Zbieranie danych
+    ! Zbieranie danych z wyświetlaniem pozycji myszy
+    print *, "Zbieranie danych (pozycje myszy):"
     do i = 1, train_size
         mx = SDL_GetMouseState(my)
         do while (mx == prev_mx .and. my == prev_my)
@@ -136,8 +155,9 @@ program mouse_nn
         end do
         X_train(i, 1) = real(mx, 8)
         X_train(i, 2) = real(my, 8)
-        Y_train(i, 1) = real(mx, 8)  ! Wyjście to ta sama pozycja
+        Y_train(i, 1) = real(mx, 8)
         Y_train(i, 2) = real(my, 8)
+        print *, "Próbka ", i, ": (", mx, ",", my, ")"
         prev_mx = mx
         prev_my = my
     end do
